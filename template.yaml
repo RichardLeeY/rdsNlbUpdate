@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  nlbUpdate
+
+  Sample SAM Template for nlbUpdate
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
+Parameters:
+  ClusterEndpoint:
+    Type: String
+    Description: The endpoint of the RDS DB cluster
+
+  NLBTargetGroupARN:
+    Type: String
+    Description: The ARN of the Network Load Balancer Target Group
+
+Resources:
+  NlbUpdateFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: nlb_rds_update/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+      - x86_64
+      Policies:
+        - Statement:
+            - Sid: VisualEditor0
+              Effect: Allow
+              Action:
+                - ec2:CreateNetworkInterface
+                - logs:CreateLogStream
+                - ec2:DescribeNetworkInterfaces
+                - ec2:CreateTags
+                - elasticloadbalancing:RegisterTargets
+                - ec2:DeleteNetworkInterface
+                - elasticloadbalancing:DescribeTargetHealth
+                - elasticloadbalancing:DeregisterTargets
+                - logs:CreateLogGroup
+                - logs:PutLogEvents
+              Resource: "*"
+      Environment:
+        Variables:
+          Cluster_EndPoint: !Ref ClusterEndpoint
+          NLB_TG_ARN: !Ref NLBTargetGroupARN
+          RDS_Port: 1433
+      LoggingConfig:
+        LogGroup: "/aws/lambda/rds-update-NlbUpdateFunction"
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  LambdaFunctionArn:
+    Description: The ARN of the Lambda function
+    Value: !GetAtt NlbUpdateFunction.Arn
